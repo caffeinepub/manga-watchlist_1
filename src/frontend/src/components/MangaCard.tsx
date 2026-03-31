@@ -90,7 +90,7 @@ function ScrollingTitle({
         const singleH = singleRef.current.scrollHeight;
         if (singleH > containerH) {
           setShouldScroll(true);
-          setDuration(Math.max(8, singleH / 7.5));
+          setDuration(Math.max(8, (singleH + 22) / 7.5));
         } else {
           setShouldScroll(false);
         }
@@ -118,7 +118,9 @@ function ScrollingTitle({
           }}
         >
           <div ref={singleRef}>{title}</div>
+          <div aria-hidden style={{ height: "1.4em" }} />
           <div aria-hidden>{title}</div>
+          <div aria-hidden style={{ height: "1.4em" }} />
         </div>
       ) : (
         <div
