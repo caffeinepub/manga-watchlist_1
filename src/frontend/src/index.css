@@ -1,0 +1,176 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Playfair Display - Display font */
+@font-face {
+  font-family: "Playfair Display";
+  src: url("/assets/fonts/PlayfairDisplay.woff2") format("woff2");
+  font-weight: 400 800;
+  font-display: swap;
+}
+
+/* Satoshi - Body font */
+@font-face {
+  font-family: "Satoshi";
+  src: url("/assets/fonts/Satoshi.woff2") format("woff2");
+  font-weight: 300 700;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    --radius: 0.75rem;
+
+    /* Gold-on-black dark theme tokens */
+    --background: 0.09 0 0;
+    --foreground: 0.93 0 0;
+    --card: 0.12 0 0;
+    --card-foreground: 0.93 0 0;
+    --popover: 0.14 0 0;
+    --popover-foreground: 0.93 0 0;
+    --primary: 0.72 0.14 73;
+    --primary-foreground: 0.12 0 0;
+    --secondary: 0.18 0 0;
+    --secondary-foreground: 0.93 0 0;
+    --muted: 0.22 0 0;
+    --muted-foreground: 0.73 0 0;
+    --accent: 0.78 0.14 73;
+    --accent-foreground: 0.12 0 0;
+    --destructive: 0.65 0.22 25;
+    --destructive-foreground: 0.93 0 0;
+    --border: 0.22 0 0;
+    --input: 0.15 0 0;
+    --ring: 0.72 0.14 73;
+
+    /* Status colors */
+    --success: 0.68 0.18 145;
+    --warning: 0.72 0.15 55;
+
+    /* Chart */
+    --chart-1: 0.72 0.14 73;
+    --chart-2: 0.6 0.12 180;
+    --chart-3: 0.5 0.1 240;
+    --chart-4: 0.8 0.18 80;
+    --chart-5: 0.65 0.2 30;
+
+    /* Sidebar */
+    --sidebar: 0.1 0 0;
+    --sidebar-foreground: 0.93 0 0;
+    --sidebar-primary: 0.72 0.14 73;
+    --sidebar-primary-foreground: 0.12 0 0;
+    --sidebar-accent: 0.18 0 0;
+    --sidebar-accent-foreground: 0.93 0 0;
+    --sidebar-border: 0.22 0 0;
+    --sidebar-ring: 0.72 0.14 73;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Satoshi", system-ui, sans-serif;
+  }
+
+  /* Hide scrollbars while keeping scroll functionality */
+  * {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+  }
+  *::-webkit-scrollbar {
+    display: none; /* Chrome/Safari/Opera */
+  }
+}
+
+@layer components {
+  .gold-border {
+    border: 1px solid oklch(0.72 0.14 73 / 0.5);
+    box-shadow: 0 0 20px oklch(0.72 0.14 73 / 0.08), inset 0 0 0 1px
+      oklch(0.72 0.14 73 / 0.05);
+  }
+  .gold-glow {
+    box-shadow: 0 0 25px oklch(0.72 0.14 73 / 0.25);
+  }
+  .hero-gradient {
+    background: radial-gradient(
+      ellipse 120% 80% at 50% 0%,
+      oklch(0.15 0 0) 0%,
+      oklch(0.09 0 0) 60%
+    );
+  }
+
+  /* Rainbow animated text for Complete status and 8+ ratings */
+  .rainbow-text {
+    background: linear-gradient(
+      90deg,
+      #ff0040,
+      #ff6600,
+      #ffcc00,
+      #00dd55,
+      #0099ff,
+      #9900ff,
+      #ff0040
+    );
+    background-size: 250% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: rainbow-flow 3s linear infinite;
+  }
+}
+
+/* Rainbow gradient animation */
+@keyframes rainbow-flow {
+  0% {
+    background-position: 0% center;
+  }
+  100% {
+    background-position: 250% center;
+  }
+}
+
+/* Horizontal marquee (kept for legacy reference) */
+@keyframes marquee {
+  0%,
+  12% {
+    transform: translateX(0);
+  }
+  78%,
+  88% {
+    transform: translateX(var(--scroll-px, 0px));
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+/* Vertical marquee for wrapping title scroll */
+@keyframes marquee-vertical {
+  0%,
+  12% {
+    transform: translateY(0);
+  }
+  78%,
+  88% {
+    transform: translateY(var(--scroll-py, 0px));
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* Seamless vertical loop marquee for long titles */
+@keyframes marquee-vertical-loop {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-50%);
+  }
+}
