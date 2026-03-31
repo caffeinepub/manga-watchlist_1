@@ -344,47 +344,72 @@ export default function WatchlistScreen() {
     const backup = [...entries];
     setIsDeletingAll(true);
     setShowDeleteAll(false);
-    try {
-      for (const e of backup) {
-        await deleteEntry(e.id);
+
+    const deleteWithRetry = async (
+      id: bigint,
+      retries = 3,
+    ): Promise<boolean> => {
+      const delays = [500, 1000, 2000];
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+          await deleteEntry(id);
+          return true;
+        } catch {
+          if (attempt < retries) {
+            await new Promise((res) => setTimeout(res, delays[attempt]));
+          }
+        }
       }
-      let undone = false;
-      toast.success(`Deleted all ${backup.length} entries`, {
-        duration: 10000,
-        action: {
-          label: "Undo",
-          onClick: async () => {
-            if (undone) return;
-            undone = true;
-            try {
-              for (const e of backup) {
-                await addEntry({
-                  mainTitle: e.mainTitle,
-                  altTitle: e.altTitle,
-                  synopsis: e.synopsis,
-                  genres: e.genres,
-                  status: e.status,
-                  rating: e.rating,
-                  artRating: e.artRating,
-                  cenLevel: e.cenLevel,
-                  chaptersOwned: e.chaptersOwned,
-                  chaptersRead: e.chaptersRead,
-                  notes: e.notes,
-                  coverImageKey: e.coverImageKey,
-                });
-              }
-              toast.success(`Restored ${backup.length} entries`);
-            } catch {
-              toast.error("Failed to restore entries");
-            }
-          },
-        },
-      });
-    } catch {
-      toast.error("Failed to delete all entries");
-    } finally {
-      setIsDeletingAll(false);
+      return false;
+    };
+
+    let failCount = 0;
+    for (const e of backup) {
+      const ok = await deleteWithRetry(e.id);
+      if (!ok) failCount++;
     }
+
+    setIsDeletingAll(false);
+
+    if (failCount > 0) {
+      toast.warning(
+        `Deleted ${backup.length - failCount} entries, ${failCount} failed`,
+      );
+      return;
+    }
+
+    let undone = false;
+    toast.success(`Deleted all ${backup.length} entries`, {
+      duration: 10000,
+      action: {
+        label: "Undo",
+        onClick: async () => {
+          if (undone) return;
+          undone = true;
+          try {
+            for (const e of backup) {
+              await addEntry({
+                mainTitle: e.mainTitle,
+                altTitle: e.altTitle,
+                synopsis: e.synopsis,
+                genres: e.genres,
+                status: e.status,
+                rating: e.rating,
+                artRating: e.artRating,
+                cenLevel: e.cenLevel,
+                chaptersOwned: e.chaptersOwned,
+                chaptersRead: e.chaptersRead,
+                notes: e.notes,
+                coverImageKey: e.coverImageKey,
+              });
+            }
+            toast.success(`Restored ${backup.length} entries`);
+          } catch {
+            toast.error("Failed to restore entries");
+          }
+        },
+      },
+    });
   };
 
   const handleEdit = (entry: MangaEntry) => {

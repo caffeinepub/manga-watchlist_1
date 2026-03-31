@@ -80,6 +80,7 @@ function ScrollingTitle({
   const singleRef = useRef<HTMLDivElement>(null);
   const [shouldScroll, setShouldScroll] = useState(false);
   const [duration, setDuration] = useState(8);
+  const [isPaused, setIsPaused] = useState(false);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: refs are stable, title triggers remeasure
   useEffect(() => {
@@ -107,8 +108,11 @@ function ScrollingTitle({
     >
       {shouldScroll ? (
         <div
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
           style={{
             animation: `marquee-vertical-loop ${duration}s linear infinite`,
+            animationPlayState: isPaused ? "paused" : "running",
             wordBreak: "break-word",
             whiteSpace: "normal",
           }}

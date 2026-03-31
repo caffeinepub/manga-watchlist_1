@@ -22,6 +22,30 @@ import { useAddEntry, useUpdateEntry } from "../hooks/useQueries";
 import { useStorageClient } from "../hooks/useStorageClient";
 
 // ---------------------------------------------------------------------------
+// Retry helper — exponential back-off with jitter
+// ---------------------------------------------------------------------------
+async function retryAsync<T>(
+  fn: () => Promise<T>,
+  maxAttempts = 3,
+  baseDelayMs = 800,
+): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      if (attempt < maxAttempts - 1) {
+        await new Promise((r) =>
+          setTimeout(r, baseDelayMs * 2 ** attempt + Math.random() * 400),
+        );
+      }
+    }
+  }
+  throw lastErr;
+}
+
+// ---------------------------------------------------------------------------
 // Field mapping — maps common export variants → canonical field names
 // ---------------------------------------------------------------------------
 
@@ -284,7 +308,7 @@ export default function ImportModal({
           );
         } else {
           try {
-            coverImageKey = await uploadFile(imageFile);
+            coverImageKey = await retryAsync(() => uploadFile(imageFile));
           } catch {
             warnings.push(`Failed to upload image for "${entry.mainTitle}"`);
           }
@@ -325,11 +349,11 @@ export default function ImportModal({
 
       try {
         if (isOverwrite && existing) {
-          await updateEntry({ id: existing.id, input });
+          await retryAsync(() => updateEntry({ id: existing.id, input }));
           updated++;
           if (entry.bookmarked) newFavIds.push(existing.id.toString());
         } else {
-          const newId = await addEntry(input);
+          const newId = await retryAsync(() => addEntry(input));
           added++;
           if (entry.bookmarked) newFavIds.push(newId.toString());
         }
@@ -337,6 +361,9 @@ export default function ImportModal({
         console.error("Import entry error:", err);
         warnings.push(`Failed to import "${entry.mainTitle}"`);
       }
+
+      // yield between entries to prevent event-loop starvation
+      await new Promise((r) => setTimeout(r, 50));
     }
 
     if (newFavIds.length > 0) {
