@@ -18,6 +18,11 @@ import { Variant_Complete_Incomplete } from "../backend";
 import type { MangaEntry } from "../backend";
 import { useAddEntry, useUpdateEntry } from "../hooks/useQueries";
 import { useStorageClient } from "../hooks/useStorageClient";
+import {
+  fetchImageAsDataUrl,
+  getCachedImage,
+  setCachedImage,
+} from "../utils/imageCache";
 
 interface FormState {
   mainTitle: string;
@@ -97,9 +102,24 @@ export default function MangaModal({
         setCoverImageKey(editEntry.coverImageKey);
         setPendingFile(null);
         if (editEntry.coverImageKey) {
-          getImageUrl(editEntry.coverImageKey).then((url) => {
-            if (url) setImagePreview(url);
-          });
+          const key = editEntry.coverImageKey;
+          (async () => {
+            const cached = await getCachedImage(key);
+            if (cached) {
+              setImagePreview(cached);
+            } else {
+              const url = await getImageUrl(key);
+              if (url) {
+                try {
+                  const dataUrl = await fetchImageAsDataUrl(url);
+                  await setCachedImage(key, dataUrl);
+                  setImagePreview(dataUrl);
+                } catch {
+                  setImagePreview(url);
+                }
+              }
+            }
+          })();
         } else {
           setImagePreview(null);
         }
