@@ -20,6 +20,13 @@ interface QuickEditState {
   left: number;
 }
 
+interface ChaptersBothState {
+  readValue: string;
+  ownedValue: string;
+  top: number;
+  left: number;
+}
+
 interface MangaCardProps {
   entry: MangaEntry;
   index: number;
@@ -159,13 +166,16 @@ export default function MangaCard({
   const noteHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Reset popup title index when popup closes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional reset
   useEffect(() => {
     if (!hoverPopup) setPopupTitleIndex(0);
   }, [hoverPopup]);
 
-  // Quick edit
+  // Quick edit (status, rating)
   const [quickEdit, setQuickEdit] = useState<QuickEditState | null>(null);
+
+  // Combined chapters edit
+  const [chaptersBothEdit, setChaptersBothEdit] =
+    useState<ChaptersBothState | null>(null);
 
   const { getImageUrl } = useStorageClient();
 
@@ -186,7 +196,7 @@ export default function MangaCard({
     return () => observer.disconnect();
   }, []);
 
-  // IDB-first image load with compression
+  // IDB-first image load
   // biome-ignore lint/correctness/useExhaustiveDependencies: retryKey is an intentional re-run trigger
   useEffect(() => {
     if (!isVisible || !entry.coverImageKey) return;
@@ -339,7 +349,7 @@ export default function MangaCard({
     setNoteVisible(false);
   };
 
-  // ── Quick edit ────────────────────────────────────────────────
+  // ── Quick edit (status / rating) ──────────────────────────────
   const openQuickEdit = (
     e: React.MouseEvent<Element>,
     field: QuickEditField,
@@ -379,6 +389,33 @@ export default function MangaCard({
 
   const getStep = (field: QuickEditField) =>
     field === "chaptersOwned" || field === "chaptersRead" ? "1" : "0.5";
+
+  // ── Combined chapters edit ────────────────────────────────────
+  const openChaptersBothEdit = (e: React.MouseEvent<Element>) => {
+    e.stopPropagation();
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const popupW = 200;
+    const popupH = 170;
+    const pos = calcPopupPos(rect, popupH, popupW);
+    setChaptersBothEdit({
+      readValue: entry.chaptersRead.toString(),
+      ownedValue: entry.chaptersOwned.toString(),
+      ...pos,
+    });
+  };
+
+  const saveChaptersBothEdit = () => {
+    if (!chaptersBothEdit) return;
+    const read = Number.parseFloat(chaptersBothEdit.readValue);
+    const owned = Number.parseFloat(chaptersBothEdit.ownedValue);
+    onQuickUpdate(entry.id, {
+      chaptersRead: Number.isNaN(read) ? entry.chaptersRead : Math.max(0, read),
+      chaptersOwned: Number.isNaN(owned)
+        ? entry.chaptersOwned
+        : Math.max(0, owned),
+    });
+    setChaptersBothEdit(null);
+  };
 
   return (
     <>
@@ -433,7 +470,7 @@ export default function MangaCard({
               e.stopPropagation();
               setTitleIndex((i) => (i + 1) % totalTitles);
             }}
-            className="shrink-0 font-bold rounded transition-colors hover:brightness-125 mt-1"
+            className="shrink-0 font-bold rounded transition-colors hover:brightness-125 self-start"
             style={{
               color: "#8B6914",
               background: "transparent",
@@ -452,54 +489,42 @@ export default function MangaCard({
         </div>
 
         {/* ── Status Column ── 150px ─────────────────────────────── */}
-        <button
-          type="button"
-          onClick={(e) => openQuickEdit(e, "status")}
-          className="flex flex-col justify-center items-center py-2 px-2 border-r border-transparent shrink-0 gap-1 hover:bg-white/[0.03] transition-colors cursor-pointer"
+        <div
+          className="flex flex-col justify-center items-center py-2 px-2 border-r border-transparent shrink-0 gap-1"
           style={{ width: "150px" }}
-          title="Edit status"
         >
-          <span
-            className={`text-[13px] font-bold text-center leading-tight ${
-              isComplete ? "rainbow-text" : "text-amber-400"
-            }`}
+          <button
+            type="button"
+            onClick={(e) => openQuickEdit(e, "status")}
+            className="hover:bg-white/[0.03] transition-colors cursor-pointer rounded px-1"
+            title="Edit status"
           >
-            {isComplete ? "Complete" : "Incomplete"}
-          </span>
+            <span
+              className={`text-[13px] font-bold text-center leading-tight ${
+                isComplete ? "rainbow-text" : "text-amber-400"
+              }`}
+            >
+              {isComplete ? "Complete" : "Incomplete"}
+            </span>
+          </button>
           <div className="flex flex-col items-center gap-0.5">
             <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
               Chapters
             </span>
-            <div
-              className="flex items-center gap-0.5"
+            {/* Single click area opens combined edit for both chapters */}
+            <button
+              type="button"
+              onClick={openChaptersBothEdit}
+              className="flex items-center gap-0.5 hover:text-primary hover:bg-primary/10 transition-colors px-1 py-0.5 rounded cursor-pointer"
+              title="Edit chapters read and owned"
               style={{ fontSize: "12px" }}
             >
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  openQuickEdit(e, "chaptersRead");
-                }}
-                className="hover:text-primary hover:bg-primary/10 transition-colors px-0.5 rounded cursor-pointer"
-                title="Edit chapters read"
-              >
-                {entry.chaptersRead.toFixed(1)}
-              </button>
+              <span>{entry.chaptersRead.toFixed(1)}</span>
               <span className="text-muted-foreground">/</span>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  openQuickEdit(e, "chaptersOwned");
-                }}
-                className="hover:text-primary hover:bg-primary/10 transition-colors px-0.5 rounded cursor-pointer"
-                title="Edit chapters owned"
-              >
-                {entry.chaptersOwned.toFixed(1)}
-              </button>
-            </div>
+              <span>{entry.chaptersOwned.toFixed(1)}</span>
+            </button>
           </div>
-        </button>
+        </div>
 
         {/* ── Rating Column ── 80px ────────────────── */}
         <div
@@ -637,7 +662,7 @@ export default function MangaCard({
                 onMouseEnter={handlePopupMouseEnter}
                 onMouseLeave={handlePopupMouseLeave}
               >
-                <div className="shrink-0" style={{ height: "260px" }}>
+                <div className="shrink-0" style={{ height: "300px" }}>
                   {imageUrl && !imageError ? (
                     <img
                       src={imageUrl}
@@ -797,11 +822,10 @@ export default function MangaCard({
             )}
           </AnimatePresence>
 
-          {/* Quick Edit Popup */}
+          {/* Quick Edit Popup (status / rating) */}
           <AnimatePresence>
             {quickEdit && (
               <>
-                {/* Backdrop — captures outside clicks */}
                 {/* biome-ignore lint/a11y/useKeyWithClickEvents: backdrop dismiss does not need keyboard equivalent */}
                 <div
                   className="fixed inset-0"
@@ -893,6 +917,122 @@ export default function MangaCard({
                         </div>
                       </div>
                     )}
+                  </div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
+
+          {/* Combined Chapters Edit Popup */}
+          <AnimatePresence>
+            {chaptersBothEdit && (
+              <>
+                {/* biome-ignore lint/a11y/useKeyWithClickEvents: backdrop dismiss */}
+                <div
+                  className="fixed inset-0"
+                  style={{ zIndex: 9998 }}
+                  onClick={() => setChaptersBothEdit(null)}
+                />
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.92, y: -4 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.92, y: -4 }}
+                  transition={{ duration: 0.12 }}
+                  className="gold-border rounded-xl bg-card"
+                  style={{
+                    position: "fixed",
+                    top: chaptersBothEdit.top,
+                    left: chaptersBothEdit.left,
+                    width: "200px",
+                    zIndex: 9999,
+                    boxShadow: "0 12px 40px rgba(0,0,0,0.85)",
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="p-3">
+                    <p className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold mb-3">
+                      Chapters
+                    </p>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[10px] text-muted-foreground w-10 shrink-0">
+                          Read
+                        </span>
+                        <input
+                          type="number"
+                          value={chaptersBothEdit.readValue}
+                          onChange={(e) =>
+                            setChaptersBothEdit((prev) =>
+                              prev
+                                ? { ...prev, readValue: e.target.value }
+                                : null,
+                            )
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              saveChaptersBothEdit();
+                            }
+                            if (e.key === "Escape") {
+                              e.preventDefault();
+                              setChaptersBothEdit(null);
+                            }
+                          }}
+                          step="1"
+                          min="0"
+                          className="flex-1 text-sm bg-background border border-border/50 rounded-lg px-2 py-1.5 text-foreground text-center font-semibold focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
+                          // biome-ignore lint/a11y/noAutofocus: intentional for quick edit
+                          autoFocus
+                          onFocus={(e) => e.target.select()}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[10px] text-muted-foreground w-10 shrink-0">
+                          Owned
+                        </span>
+                        <input
+                          type="number"
+                          value={chaptersBothEdit.ownedValue}
+                          onChange={(e) =>
+                            setChaptersBothEdit((prev) =>
+                              prev
+                                ? { ...prev, ownedValue: e.target.value }
+                                : null,
+                            )
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              saveChaptersBothEdit();
+                            }
+                            if (e.key === "Escape") {
+                              e.preventDefault();
+                              setChaptersBothEdit(null);
+                            }
+                          }}
+                          step="1"
+                          min="0"
+                          className="flex-1 text-sm bg-background border border-border/50 rounded-lg px-2 py-1.5 text-foreground text-center font-semibold focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
+                          onFocus={(e) => e.target.select()}
+                        />
+                      </div>
+                      <div className="flex gap-1.5 mt-1">
+                        <button
+                          type="button"
+                          onClick={() => setChaptersBothEdit(null)}
+                          className="flex-1 text-[10px] py-1 rounded-lg bg-secondary text-muted-foreground hover:text-foreground border border-border transition-all"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={saveChaptersBothEdit}
+                          className="flex-1 text-[10px] py-1 rounded-lg bg-primary/20 text-primary hover:bg-primary/30 border border-primary/40 transition-all font-semibold"
+                        >
+                          Save
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </motion.div>
               </>

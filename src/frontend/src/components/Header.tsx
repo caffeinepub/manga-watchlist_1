@@ -3,9 +3,11 @@ import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
+  ChevronsUp,
   LogOut,
   User,
 } from "lucide-react";
+import { useState } from "react";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 
 interface HeaderProps {
@@ -22,6 +24,7 @@ export default function Header({
 }: HeaderProps) {
   const { clear, identity } = useInternetIdentity();
   const queryClient = useQueryClient();
+  const [goToInput, setGoToInput] = useState("");
 
   const handleLogout = async () => {
     await clear();
@@ -38,6 +41,15 @@ export default function Header({
     currentPage !== undefined &&
     onPageChange;
 
+  const handleGoTo = () => {
+    if (!onPageChange || !totalPages) return;
+    const p = Number.parseInt(goToInput, 10);
+    if (!Number.isNaN(p)) {
+      onPageChange(Math.min(Math.max(1, p), totalPages));
+    }
+    setGoToInput("");
+  };
+
   return (
     <header
       data-ocid="header.section"
@@ -51,6 +63,17 @@ export default function Header({
             Collection
           </span>
         </div>
+
+        {/* Scroll to top button */}
+        <button
+          type="button"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="w-7 h-7 flex items-center justify-center rounded-md border border-border text-muted-foreground hover:text-primary hover:border-primary/50 transition-all shrink-0"
+          aria-label="Scroll to top"
+          title="Go to top"
+        >
+          <ChevronsUp className="w-3.5 h-3.5" />
+        </button>
 
         {/* Center spacer */}
         <div className="flex-1" />
@@ -79,6 +102,28 @@ export default function Header({
             >
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
+
+            {/* Go to page input */}
+            <div className="flex items-center gap-1 ml-1">
+              <input
+                type="number"
+                min={1}
+                max={totalPages}
+                value={goToInput}
+                onChange={(e) => setGoToInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleGoTo()}
+                placeholder="pg"
+                className="w-12 h-7 rounded-md border border-border bg-background text-foreground text-xs text-center tabular-nums focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30"
+                aria-label="Go to page"
+              />
+              <button
+                type="button"
+                onClick={handleGoTo}
+                className="h-7 px-2 rounded-md border border-border text-muted-foreground text-xs hover:text-primary hover:border-primary/50 transition-all"
+              >
+                Go
+              </button>
+            </div>
           </div>
         )}
 
