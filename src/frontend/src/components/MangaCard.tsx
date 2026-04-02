@@ -394,7 +394,7 @@ export default function MangaCard({
   };
 
   const getStep = (field: QuickEditField) =>
-    field === "chaptersOwned" || field === "chaptersRead" ? "1" : "0.5";
+    field === "chaptersOwned" || field === "chaptersRead" ? "1" : "0.1";
 
   // ── Combined chapters edit ────────────────────────────────────
   const openChaptersBothEdit = (e: React.MouseEvent<Element>) => {

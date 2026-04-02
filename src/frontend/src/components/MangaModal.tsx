@@ -512,7 +512,7 @@ export default function MangaModal({
                   }
                   min={0}
                   max={10}
-                  step={0.5}
+                  step={0.1}
                   className={numberInputCls}
                 />
               </div>
