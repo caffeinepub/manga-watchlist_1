@@ -348,28 +348,13 @@ export default function WatchlistScreen() {
     setIsDeletingAll(true);
     setShowDeleteAll(false);
 
-    const deleteWithRetry = async (
-      id: bigint,
-      retries = 3,
-    ): Promise<boolean> => {
-      const delays = [500, 1000, 2000];
-      for (let attempt = 0; attempt <= retries; attempt++) {
-        try {
-          await deleteEntry(id);
-          return true;
-        } catch {
-          if (attempt < retries) {
-            await new Promise((res) => setTimeout(res, delays[attempt]));
-          }
-        }
-      }
-      return false;
-    };
-
     let failCount = 0;
     for (const e of backup) {
-      const ok = await deleteWithRetry(e.id);
-      if (!ok) failCount++;
+      try {
+        await deleteEntry(e.id);
+      } catch {
+        failCount++;
+      }
     }
 
     setIsDeletingAll(false);

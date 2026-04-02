@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRef } from "react";
 import type { MangaEntry, MangaEntryInput } from "../backend";
 import { syncEntries } from "../utils/syncManager";
 import { useActor } from "./useActor";
@@ -81,13 +82,28 @@ export function useUpdateEntry() {
 
 export function useDeleteEntry() {
   const { actor } = useActor();
+  const actorRef = useRef(actor);
+  actorRef.current = actor;
   const queryClient = useQueryClient();
   const { identity } = useInternetIdentity();
 
   return useMutation({
     mutationFn: async (id: bigint) => {
-      if (!actor) throw new Error("Not authenticated");
-      return actor.deleteEntry(id);
+      const currentActor = actorRef.current;
+      if (!currentActor) throw new Error("Not authenticated");
+      const delays = [500, 1000, 2000];
+      let lastError: unknown;
+      for (let attempt = 0; attempt <= 3; attempt++) {
+        try {
+          return await currentActor.deleteEntry(id);
+        } catch (e) {
+          lastError = e;
+          if (attempt < 3) {
+            await new Promise((res) => setTimeout(res, delays[attempt]));
+          }
+        }
+      }
+      throw lastError;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
