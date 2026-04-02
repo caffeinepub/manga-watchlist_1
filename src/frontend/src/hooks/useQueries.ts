@@ -60,13 +60,18 @@ export function useGetEntries() {
 
 export function useAddEntry() {
   const { actor } = useActor();
+  const actorRef = useRef(actor);
+  actorRef.current = actor;
   const queryClient = useQueryClient();
   const { identity } = useInternetIdentity();
 
   return useMutation({
     mutationFn: async (input: MangaEntryInput) => {
-      if (!actor) throw new Error("Not authenticated");
-      return actor.addEntry(input);
+      return withRetry(async () => {
+        const currentActor = actorRef.current;
+        if (!currentActor) throw new Error("Not authenticated");
+        return currentActor.addEntry(input);
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
