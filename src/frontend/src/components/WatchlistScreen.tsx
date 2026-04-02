@@ -34,6 +34,7 @@ import {
 } from "../hooks/useQueries";
 import { useStorageClient } from "../hooks/useStorageClient";
 import { exportWatchlist } from "../utils/exportWatchlist";
+import { clearLocalCache, saveLastSynced } from "../utils/syncManager";
 import Footer from "./Footer";
 import Header from "./Header";
 import ImportModal from "./ImportModal";
@@ -300,6 +301,8 @@ export default function WatchlistScreen() {
       await deleteEntry(confirmDelete);
       setConfirmDelete(null);
       if (entryToDelete) {
+        clearLocalCache(principalStr);
+        saveLastSynced(principalStr, 0n);
         let undone = false;
         toast.success("Entry removed", {
           duration: 10000,
@@ -378,6 +381,8 @@ export default function WatchlistScreen() {
       return;
     }
 
+    clearLocalCache(principalStr);
+    saveLastSynced(principalStr, 0n);
     let undone = false;
     toast.success(`Deleted all ${backup.length} entries`, {
       duration: 10000,

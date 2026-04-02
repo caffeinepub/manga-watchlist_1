@@ -156,8 +156,11 @@ export interface backendInterface {
     deleteEntry(id: bigint): Promise<boolean>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
+    getDeletedSince(since: bigint): Promise<Array<bigint>>;
     getEntries(): Promise<Array<MangaEntry>>;
+    getEntriesSince(since: bigint): Promise<Array<MangaEntry>>;
     getEntry(id: bigint): Promise<MangaEntry | null>;
+    getLastModified(): Promise<bigint>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     isUnlocked(): Promise<boolean>;
@@ -346,6 +349,20 @@ export class Backend implements backendInterface {
             return from_candid_UserRole_n14(this._uploadFile, this._downloadFile, result);
         }
     }
+    async getDeletedSince(arg0: bigint): Promise<Array<bigint>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getDeletedSince(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getDeletedSince(arg0);
+            return result;
+        }
+    }
     async getEntries(): Promise<Array<MangaEntry>> {
         if (this.processError) {
             try {
@@ -357,6 +374,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.getEntries();
+            return from_candid_vec_n16(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getEntriesSince(arg0: bigint): Promise<Array<MangaEntry>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getEntriesSince(arg0);
+                return from_candid_vec_n16(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getEntriesSince(arg0);
             return from_candid_vec_n16(this._uploadFile, this._downloadFile, result);
         }
     }
@@ -372,6 +403,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getEntry(arg0);
             return from_candid_opt_n21(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getLastModified(): Promise<bigint> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getLastModified();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getLastModified();
+            return result;
         }
     }
     async getUserProfile(arg0: Principal): Promise<UserProfile | null> {

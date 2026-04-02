@@ -56,8 +56,11 @@ export interface backendInterface {
     deleteEntry(id: bigint): Promise<boolean>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
+    getDeletedSince(since: bigint): Promise<Array<bigint>>;
     getEntries(): Promise<Array<MangaEntry>>;
+    getEntriesSince(since: bigint): Promise<Array<MangaEntry>>;
     getEntry(id: bigint): Promise<MangaEntry | null>;
+    getLastModified(): Promise<bigint>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     isUnlocked(): Promise<boolean>;

@@ -90,8 +90,11 @@ export const idlService = IDL.Service({
   'deleteEntry' : IDL.Func([IDL.Nat], [IDL.Bool], []),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+  'getDeletedSince' : IDL.Func([IDL.Int], [IDL.Vec(IDL.Nat)], ['query']),
   'getEntries' : IDL.Func([], [IDL.Vec(MangaEntry)], ['query']),
+  'getEntriesSince' : IDL.Func([IDL.Int], [IDL.Vec(MangaEntry)], ['query']),
   'getEntry' : IDL.Func([IDL.Nat], [IDL.Opt(MangaEntry)], ['query']),
+  'getLastModified' : IDL.Func([], [IDL.Int], ['query']),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
@@ -194,8 +197,11 @@ export const idlFactory = ({ IDL }) => {
     'deleteEntry' : IDL.Func([IDL.Nat], [IDL.Bool], []),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+    'getDeletedSince' : IDL.Func([IDL.Int], [IDL.Vec(IDL.Nat)], ['query']),
     'getEntries' : IDL.Func([], [IDL.Vec(MangaEntry)], ['query']),
+    'getEntriesSince' : IDL.Func([IDL.Int], [IDL.Vec(MangaEntry)], ['query']),
     'getEntry' : IDL.Func([IDL.Nat], [IDL.Opt(MangaEntry)], ['query']),
+    'getLastModified' : IDL.Func([], [IDL.Int], ['query']),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(UserProfile)],

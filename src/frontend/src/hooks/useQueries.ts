@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { MangaEntry, MangaEntryInput } from "../backend";
+import { syncEntries } from "../utils/syncManager";
 import { useActor } from "./useActor";
 import { useInternetIdentity } from "./useInternetIdentity";
 
@@ -32,8 +33,8 @@ export function useGetEntries() {
   return useQuery<MangaEntry[]>({
     queryKey: ["entries", identity?.getPrincipal().toString()],
     queryFn: async () => {
-      if (!actor) return [];
-      return actor.getEntries();
+      if (!actor || !identity) return [];
+      return syncEntries(actor, identity.getPrincipal().toString());
     },
     enabled: !!actor && !actorFetching && !!identity,
   });

@@ -1,10 +1,9 @@
 import Time "mo:core/Time";
 import Float "mo:core/Float";
-import Bool "mo:core/Bool";
 import Array "mo:core/Array";
-import List "mo:core/List";
 import Int "mo:core/Int";
 import Nat "mo:core/Nat";
+import List "mo:core/List";
 import Iter "mo:core/Iter";
 import Map "mo:core/Map";
 import Order "mo:core/Order";
@@ -16,13 +15,16 @@ import Runtime "mo:core/Runtime";
 
 import MixinStorage "blob-storage/Mixin";
 
+import Migration "migration";
+
+(with migration = Migration.run)
 actor {
   // Mixins
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
   include MixinStorage();
 
-  // Type Definitions
+  // Types
   public type MangaEntry = {
     id : Nat;
     mainTitle : Text;
@@ -66,7 +68,12 @@ actor {
     name : Text;
   };
 
-  type PasswordAttemptState = {
+  type DeletedEntry = {
+    id : Nat;
+    deletedAt : Int;
+  };
+
+  public type PasswordAttemptState = {
     attempts : Nat;
     lockoutTimestamp : Int;
     isUnlocked : Bool;
@@ -81,6 +88,7 @@ actor {
   // State
   var nextEntryId = 0;
   let entries = Map.empty<Principal, Map.Map<Nat, MangaEntry>>();
+  let deletedEntries = Map.empty<Principal, List.List<DeletedEntry>>();
   let passwordAttempts = Map.empty<Principal, PasswordAttemptState>();
   let userProfiles = Map.empty<Principal, UserProfile>();
 
@@ -156,7 +164,12 @@ actor {
     };
 
     if (input == password) {
-      let newState = { state with isUnlocked = true; attempts = 0; lockoutTimestamp = 0 };
+      let newState = {
+        state with
+        isUnlocked = true;
+        attempts = 0;
+        lockoutTimestamp = 0;
+      };
       passwordAttempts.add(caller, newState);
       return #ok;
     };
@@ -272,6 +285,16 @@ actor {
     let existed = userEntries.containsKey(id);
     userEntries.remove(id);
     entries.add(caller, userEntries);
+
+    if (existed) {
+      let userDeletedEntries = switch (deletedEntries.get(caller)) {
+        case (null) { List.empty<DeletedEntry>() };
+        case (?list) { list };
+      };
+      userDeletedEntries.add({ id; deletedAt = Time.now() });
+      deletedEntries.add(caller, userDeletedEntries);
+    };
+
     existed;
   };
 
@@ -289,5 +312,48 @@ actor {
     };
 
     getEntriesMap(caller).get(id);
+  };
+
+  // Delta Sync Functions
+  public query ({ caller }) func getLastModified() : async Int {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view entries");
+    };
+
+    let userEntries = getEntriesMap(caller);
+    var lastModified : Int = 0;
+    for (entry in userEntries.values()) {
+      if (entry.updatedAt > lastModified) {
+        lastModified := entry.updatedAt;
+      };
+    };
+    lastModified;
+  };
+
+  public query ({ caller }) func getEntriesSince(since : Int) : async [MangaEntry] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view entries");
+    };
+
+    let userEntries = getEntriesMap(caller);
+    let filtered = userEntries.values().filter(
+      func(entry) { entry.updatedAt > since }
+    );
+    filtered.toArray();
+  };
+
+  public query ({ caller }) func getDeletedSince(since : Int) : async [Nat] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view deleted entries");
+    };
+
+    let userDeletedEntries = switch (deletedEntries.get(caller)) {
+      case (null) { List.empty<DeletedEntry>() };
+      case (?list) { list };
+    };
+    let filtered = userDeletedEntries.values().filter(
+      func(deleted) { deleted.deletedAt > since }
+    );
+    filtered.toArray().map(func(deleted) { deleted.id });
   };
 };
