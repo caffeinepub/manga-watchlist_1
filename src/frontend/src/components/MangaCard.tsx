@@ -281,7 +281,7 @@ export default function MangaCard({
     if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
     if (cardRef.current) {
       const rect = cardRef.current.getBoundingClientRect();
-      const popupH = 600;
+      const popupH = 660;
       const margin = 8;
       let top = rect.top + rect.height / 2 - 200;
       if (top < margin) top = margin;
@@ -657,8 +657,8 @@ export default function MangaCard({
                 className="gold-border rounded-xl bg-card overflow-hidden flex flex-col"
                 style={{
                   position: "fixed",
-                  width: "300px",
-                  height: "600px",
+                  width: "330px",
+                  height: "660px",
                   left: coverPopupPos.left,
                   top: coverPopupPos.top,
                   zIndex: 9999,
@@ -668,7 +668,7 @@ export default function MangaCard({
                 onMouseEnter={handlePopupMouseEnter}
                 onMouseLeave={handlePopupMouseLeave}
               >
-                <div className="shrink-0" style={{ height: "300px" }}>
+                <div className="shrink-0" style={{ height: "330px" }}>
                   {imageUrl && !imageError ? (
                     <img
                       src={imageUrl}
