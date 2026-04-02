@@ -211,8 +211,12 @@ export default function MangaModal({
       }
 
       onClose();
-    } catch {
-      toast.error(editEntry ? "Failed to update entry" : "Failed to add entry");
+    } catch (e) {
+      toast.error(
+        editEntry
+          ? `Update failed: ${e instanceof Error ? e.message : String(e)}`
+          : "Failed to add entry",
+      );
     } finally {
       setIsSaving(false);
       setUploadProgress(null);

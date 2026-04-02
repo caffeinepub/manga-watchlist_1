@@ -24,11 +24,34 @@ function syncKey(principal: string) {
   return `manga-lastsync-${principal}`;
 }
 
+/**
+ * Ensure bigint fields on a cached entry are actually bigint.
+ * Old cache versions may have serialized them as plain JSON numbers.
+ */
+function normalizeCachedEntry(e: MangaEntry): MangaEntry {
+  return {
+    ...e,
+    id:
+      typeof e.id === "bigint"
+        ? e.id
+        : BigInt(String(Math.round(Number(e.id)))),
+    createdAt:
+      typeof e.createdAt === "bigint"
+        ? e.createdAt
+        : BigInt(String(Math.round(Number(e.createdAt)))),
+    updatedAt:
+      typeof e.updatedAt === "bigint"
+        ? e.updatedAt
+        : BigInt(String(Math.round(Number(e.updatedAt)))),
+  };
+}
+
 export function getLocalEntries(principal: string): MangaEntry[] {
   try {
     const raw = localStorage.getItem(entriesKey(principal));
     if (!raw) return [];
-    return JSON.parse(raw, bigintReviver) as MangaEntry[];
+    const parsed = JSON.parse(raw, bigintReviver) as MangaEntry[];
+    return parsed.map(normalizeCachedEntry);
   } catch {
     return [];
   }

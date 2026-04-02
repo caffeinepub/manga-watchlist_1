@@ -285,8 +285,10 @@ export default function WatchlistScreen() {
         },
       });
       toast.success("Updated");
-    } catch {
-      toast.error("Failed to update");
+    } catch (e) {
+      toast.error(
+        `Update failed: ${e instanceof Error ? e.message : String(e)}`,
+      );
     }
   };
 
@@ -337,8 +339,10 @@ export default function WatchlistScreen() {
       } else {
         toast.success("Entry removed");
       }
-    } catch {
-      toast.error("Failed to delete entry");
+    } catch (e) {
+      toast.error(
+        `Delete failed: ${e instanceof Error ? e.message : String(e)}`,
+      );
       setConfirmDelete(null);
     }
   };

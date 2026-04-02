@@ -5,6 +5,23 @@ import { syncEntries } from "../utils/syncManager";
 import { useActor } from "./useActor";
 import { useInternetIdentity } from "./useInternetIdentity";
 
+const RETRY_DELAYS = [500, 1000, 2000];
+
+async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= 3; attempt++) {
+    try {
+      return await fn();
+    } catch (e) {
+      lastError = e;
+      if (attempt < 3) {
+        await new Promise((res) => setTimeout(res, RETRY_DELAYS[attempt]));
+      }
+    }
+  }
+  throw lastError;
+}
+
 export function useIsUnlocked() {
   const { actor, isFetching: actorFetching } = useActor();
   const { identity } = useInternetIdentity();
@@ -61,6 +78,8 @@ export function useAddEntry() {
 
 export function useUpdateEntry() {
   const { actor } = useActor();
+  const actorRef = useRef(actor);
+  actorRef.current = actor;
   const queryClient = useQueryClient();
   const { identity } = useInternetIdentity();
 
@@ -69,8 +88,11 @@ export function useUpdateEntry() {
       id,
       input,
     }: { id: bigint; input: MangaEntryInput }) => {
-      if (!actor) throw new Error("Not authenticated");
-      return actor.updateEntry(id, input);
+      return withRetry(async () => {
+        const currentActor = actorRef.current;
+        if (!currentActor) throw new Error("Not authenticated");
+        return currentActor.updateEntry(BigInt(id), input);
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -89,21 +111,11 @@ export function useDeleteEntry() {
 
   return useMutation({
     mutationFn: async (id: bigint) => {
-      const currentActor = actorRef.current;
-      if (!currentActor) throw new Error("Not authenticated");
-      const delays = [500, 1000, 2000];
-      let lastError: unknown;
-      for (let attempt = 0; attempt <= 3; attempt++) {
-        try {
-          return await currentActor.deleteEntry(id);
-        } catch (e) {
-          lastError = e;
-          if (attempt < 3) {
-            await new Promise((res) => setTimeout(res, delays[attempt]));
-          }
-        }
-      }
-      throw lastError;
+      return withRetry(async () => {
+        const currentActor = actorRef.current;
+        if (!currentActor) throw new Error("Not authenticated");
+        return currentActor.deleteEntry(BigInt(id));
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
