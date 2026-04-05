@@ -226,7 +226,7 @@ actor {
       coverImageKey = input.coverImageKey;
       genres = input.genres;
       status = input.status;
-      rating = roundToHalf(input.rating);
+      rating = roundToTenths(input.rating);
       artRating = roundToTenths(input.artRating);
       cenLevel = roundToTenths(input.cenLevel);
       chaptersOwned = input.chaptersOwned;
@@ -260,7 +260,7 @@ actor {
           coverImageKey = input.coverImageKey;
           genres = input.genres;
           status = input.status;
-          rating = roundToHalf(input.rating);
+          rating = roundToTenths(input.rating);
           artRating = roundToTenths(input.artRating);
           cenLevel = roundToTenths(input.cenLevel);
           chaptersOwned = input.chaptersOwned;
