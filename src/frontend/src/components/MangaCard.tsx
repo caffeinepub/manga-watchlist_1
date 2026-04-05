@@ -159,6 +159,11 @@ export default function MangaCard({
     left: number;
     top: number;
   } | null>(null);
+  // Stores the original (normal-size) position; never mutated while popup is open
+  const [coverPopupBasePos, setCoverPopupBasePos] = useState<{
+    left: number;
+    top: number;
+  } | null>(null);
   const showTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -177,8 +182,30 @@ export default function MangaCard({
     if (!hoverPopup) {
       setPopupTitleIndex(0);
       setPopupExpanded(false);
+      setCoverPopupBasePos(null);
     }
   }, [hoverPopup]);
+
+  // Reposition popup when expand/restore is toggled
+  useEffect(() => {
+    if (!coverPopupBasePos) return;
+    if (popupExpanded) {
+      const m = 8;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const expandedW = 396;
+      const expandedH = 792;
+      let left = coverPopupBasePos.left;
+      let top = coverPopupBasePos.top;
+      if (left + expandedW > vw - m) left = vw - expandedW - m;
+      if (left < m) left = m;
+      if (top + expandedH > vh - m) top = vh - expandedH - m;
+      if (top < m) top = m;
+      setCoverPopupPos({ left, top });
+    } else {
+      setCoverPopupPos({ ...coverPopupBasePos });
+    }
+  }, [popupExpanded, coverPopupBasePos]);
 
   // Quick edit (status, rating)
   const [quickEdit, setQuickEdit] = useState<QuickEditState | null>(null);
@@ -292,10 +319,12 @@ export default function MangaCard({
       if (top + popupH > window.innerHeight - margin)
         top = window.innerHeight - margin - popupH;
       top = Math.max(margin, top);
-      setCoverPopupPos({
+      const pos = {
         left: rect.left + 430,
         top,
-      });
+      };
+      setCoverPopupBasePos(pos);
+      setCoverPopupPos(pos);
     }
     showTimerRef.current = setTimeout(() => setHoverPopup(true), 300);
   };
@@ -668,7 +697,8 @@ export default function MangaCard({
                   zIndex: 9999,
                   boxShadow:
                     "0 20px 60px rgba(0,0,0,0.85), 0 0 0 1px oklch(0.72 0.14 73 / 0.4)",
-                  transition: "width 0.2s ease, height 0.2s ease",
+                  transition:
+                    "left 0.2s ease, top 0.2s ease, width 0.2s ease, height 0.2s ease",
                 }}
                 onMouseEnter={handlePopupMouseEnter}
                 onMouseLeave={handlePopupMouseLeave}
