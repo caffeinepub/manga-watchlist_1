@@ -152,6 +152,7 @@ export default function MangaCard({
   const [retryKey, setRetryKey] = useState(0);
 
   // Cover popup
+  const [popupExpanded, setPopupExpanded] = useState(false);
   const [hoverPopup, setHoverPopup] = useState(false);
   const [popupTitleIndex, setPopupTitleIndex] = useState(0);
   const [coverPopupPos, setCoverPopupPos] = useState<{
@@ -171,9 +172,12 @@ export default function MangaCard({
   } | null>(null);
   const noteHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Reset popup title index when popup closes
+  // Reset popup title index and expanded state when popup closes
   useEffect(() => {
-    if (!hoverPopup) setPopupTitleIndex(0);
+    if (!hoverPopup) {
+      setPopupTitleIndex(0);
+      setPopupExpanded(false);
+    }
   }, [hoverPopup]);
 
   // Quick edit (status, rating)
@@ -657,18 +661,63 @@ export default function MangaCard({
                 className="gold-border rounded-xl bg-card overflow-hidden flex flex-col"
                 style={{
                   position: "fixed",
-                  width: "330px",
-                  height: "660px",
+                  width: popupExpanded ? "396px" : "330px",
+                  height: popupExpanded ? "792px" : "660px",
                   left: coverPopupPos.left,
                   top: coverPopupPos.top,
                   zIndex: 9999,
                   boxShadow:
                     "0 20px 60px rgba(0,0,0,0.85), 0 0 0 1px oklch(0.72 0.14 73 / 0.4)",
+                  transition: "width 0.2s ease, height 0.2s ease",
                 }}
                 onMouseEnter={handlePopupMouseEnter}
                 onMouseLeave={handlePopupMouseLeave}
               >
-                <div className="shrink-0" style={{ height: "330px" }}>
+                {/* Expand/restore toggle dot */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPopupExpanded((v) => !v);
+                  }}
+                  aria-label={
+                    popupExpanded ? "Restore popup size" : "Expand popup size"
+                  }
+                  style={{
+                    position: "absolute",
+                    top: "6px",
+                    left: "6px",
+                    width: "8px",
+                    height: "8px",
+                    borderRadius: "50%",
+                    background: "#3b82f6",
+                    border: "none",
+                    padding: 0,
+                    cursor: "pointer",
+                    zIndex: 10000,
+                    flexShrink: 0,
+                    opacity: 0.85,
+                    transition: "opacity 0.15s, transform 0.15s",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.opacity = "1";
+                    (e.currentTarget as HTMLButtonElement).style.transform =
+                      "scale(1.3)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.opacity =
+                      "0.85";
+                    (e.currentTarget as HTMLButtonElement).style.transform =
+                      "scale(1)";
+                  }}
+                />
+                <div
+                  className="shrink-0"
+                  style={{
+                    height: popupExpanded ? "396px" : "330px",
+                    transition: "height 0.2s ease",
+                  }}
+                >
                   {imageUrl && !imageError ? (
                     <img
                       src={imageUrl}
