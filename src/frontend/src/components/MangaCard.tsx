@@ -721,7 +721,7 @@ export default function MangaCard({
                     setPopupExpanded((v) => !v);
                   }}
                   style={{
-                    height: popupExpanded ? "396px" : "330px",
+                    height: popupExpanded ? "436px" : "370px",
                     transition: "height 0.2s ease",
                     cursor: "pointer",
                   }}
