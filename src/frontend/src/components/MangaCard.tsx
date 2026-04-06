@@ -186,17 +186,24 @@ export default function MangaCard({
     }
   }, [hoverPopup]);
 
-  // Reposition popup when expand/restore is toggled
+  // Reposition popup when expand/restore is toggled — expand toward screen center
   useEffect(() => {
     if (!coverPopupBasePos) return;
     if (popupExpanded) {
       const m = 8;
       const vw = window.innerWidth;
       const vh = window.innerHeight;
+      const normalW = 330;
+      const normalH = 660;
       const expandedW = 396;
       const expandedH = 792;
-      let left = coverPopupBasePos.left;
-      let top = coverPopupBasePos.top;
+      // Center of the normal popup
+      const cx = coverPopupBasePos.left + normalW / 2;
+      const cy = coverPopupBasePos.top + normalH / 2;
+      // Ideal position: keep same center
+      let left = cx - expandedW / 2;
+      let top = cy - expandedH / 2;
+      // Clamp to viewport
       if (left + expandedW > vw - m) left = vw - expandedW - m;
       if (left < m) left = m;
       if (top + expandedH > vh - m) top = vh - expandedH - m;
@@ -703,49 +710,20 @@ export default function MangaCard({
                 onMouseEnter={handlePopupMouseEnter}
                 onMouseLeave={handlePopupMouseLeave}
               >
-                {/* Expand/restore toggle dot */}
                 <button
                   type="button"
+                  className="shrink-0 block w-full p-0 border-0 bg-transparent"
+                  aria-label={
+                    popupExpanded ? "Restore popup size" : "Expand popup size"
+                  }
                   onClick={(e) => {
                     e.stopPropagation();
                     setPopupExpanded((v) => !v);
                   }}
-                  aria-label={
-                    popupExpanded ? "Restore popup size" : "Expand popup size"
-                  }
-                  style={{
-                    position: "absolute",
-                    top: "6px",
-                    left: "6px",
-                    width: "8px",
-                    height: "8px",
-                    borderRadius: "50%",
-                    background: "#3b82f6",
-                    border: "none",
-                    padding: 0,
-                    cursor: "pointer",
-                    zIndex: 10000,
-                    flexShrink: 0,
-                    opacity: 0.85,
-                    transition: "opacity 0.15s, transform 0.15s",
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.opacity = "1";
-                    (e.currentTarget as HTMLButtonElement).style.transform =
-                      "scale(1.3)";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.opacity =
-                      "0.85";
-                    (e.currentTarget as HTMLButtonElement).style.transform =
-                      "scale(1)";
-                  }}
-                />
-                <div
-                  className="shrink-0"
                   style={{
                     height: popupExpanded ? "396px" : "330px",
                     transition: "height 0.2s ease",
+                    cursor: "pointer",
                   }}
                 >
                   {imageUrl && !imageError ? (
@@ -759,7 +737,7 @@ export default function MangaCard({
                       <BookOpen className="w-12 h-12" strokeWidth={1} />
                     </div>
                   )}
-                </div>
+                </button>
                 <div className="px-4 pt-3 pb-1 shrink-0 flex items-start gap-1">
                   <div
                     className="flex-1 overflow-hidden"
